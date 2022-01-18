@@ -8,26 +8,21 @@ struct State {
 }
 
 fn main() {
-
     let initial_board = State {
         board: vec![vec![' '; 3]; 3],
         path: Vec::new(),
     };
-    
+
     let first_turn = generate_next_turns(&initial_board, 'X');
 
     println!("{:?}", first_turn);
-
-    
-
 }
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
-    u8::try_from(col + (3*row) + 1).unwrap()
+    u8::try_from(col + (3 * row) + 1).unwrap()
 }
 
 fn generate_next_turns(state: &State, player: char) -> Vec<State> {
-
     let mut res = Vec::new();
     for (rownum, row) in state.board.iter().enumerate() {
         for (colnum, &c) in row.iter().enumerate() {
@@ -41,14 +36,13 @@ fn generate_next_turns(state: &State, player: char) -> Vec<State> {
     }
 
     res
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TicTacToeState{
+enum TicTacToeState {
     Intermediate,
     Won(char),
-    Draw
+    Draw,
 }
 
 fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
@@ -65,17 +59,23 @@ fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
         }
     }
     //check forward diagonals
-    (state[0][0] == player && state[1][1] == player && state[2][2] == player) ||
-    (state[2][0] == player && state[1][1] == player && state[0][2] == player) 
+    (state[0][0] == player && state[1][1] == player && state[2][2] == player)
+        || (state[2][0] == player && state[1][1] == player && state[0][2] == player)
 }
 
 fn get_end_state(state: &State) -> TicTacToeState {
-    if check_win_for(&state.board, 'X')  {return TicTacToeState::Won('X');}
-    if check_win_for(&state.board, 'O')  {return TicTacToeState::Won('O');}
-    if state.path.len() == 9 {return TicTacToeState::Draw;}
+    if check_win_for(&state.board, 'X') {
+        return TicTacToeState::Won('X');
+    }
+    if check_win_for(&state.board, 'O') {
+        return TicTacToeState::Won('O');
+    }
+    if state.path.len() == 9 {
+        return TicTacToeState::Draw;
+    }
     TicTacToeState::Intermediate
 }
 
-fn is_end_state(state: &State) -> bool{
+fn is_end_state(state: &State) -> bool {
     get_end_state(state) != TicTacToeState::Intermediate
 }
