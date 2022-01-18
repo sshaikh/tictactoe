@@ -1,16 +1,20 @@
 use std::cmp;
+use std::convert::TryFrom;
 
-type State = Vec<Vec<char>>;
-
-const _WIDTH: usize = 3;
-const _HEIGHT: usize = 3;
+#[derive(Debug, Clone)]
+struct State {
+    board: Vec<Vec<char>>,
+    path: Vec<u8>,
+}
 
 fn main() {
 
-
-    let _initial_board = vec![vec![' '; _WIDTH]; _HEIGHT];
+    let initial_board = State {
+        board: vec![vec![' '; 3]; 3],
+        path: Vec::new(),
+    };
     
-    let first_turn = generate_next_turns(_initial_board, 'X');
+    let first_turn = generate_next_turns(&initial_board, 'X');
 
     println!("{:?}", first_turn);
 
@@ -18,17 +22,22 @@ fn main() {
 
 }
 
-fn generate_next_turns(state: State, player: char) -> Vec<State> {
+fn get_ord_from_coords(row: usize, col: usize) -> u8 {
+    u8::try_from(col + (3*row) + 1).unwrap()
+}
+
+fn generate_next_turns(state: &State, player: char) -> Vec<State> {
 
     let mut res = Vec::new();
-    for (rownum, row) in state.iter().enumerate() {
-    for (colnum, &c) in row.iter().enumerate() {
-        if c == ' ' {
-            let mut next = state.clone();
-            next[rownum][colnum] = player;
-            res.push(next);
+    for (rownum, row) in state.board.iter().enumerate() {
+        for (colnum, &c) in row.iter().enumerate() {
+            if c == ' ' {
+                let mut next = state.clone();
+                next.board[rownum][colnum] = player;
+                next.path.push(get_ord_from_coords(rownum, colnum));
+                res.push(next);
+            }
         }
-    }
     }
 
     res
@@ -42,53 +51,31 @@ enum TicTacToeState{
     Draw
 }
 
-fn check_win_for(state: State, player: char) -> bool {
+fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
     // check rows
-    for row in &state {
+    for row in state {
         if row.iter().all(|&c| c == player) {
             return true;
         }
     }
     //check columns
-    for colnum in 0.._WIDTH {
+    for colnum in 0..3 {
         if state.iter().all(|row| row[colnum] == player) {
             return true;
         }
     }
     //check forward diagonals
-    for colnum in 0..(_WIDTH - _HEIGHT) {
-        for rownum in 0..(_HEIGHT - _WIDTH) {
-            let mut result = true;
-            for offset in 0..cmp::min(_WIDTH, _HEIGHT) {
-                if state[rownum+offset][colnum+offset] != player {
-                    result = false;
-                    break;
-                }
-            }
-            if result {return true}
-        }
-    }
-    //check backward diagonals
-    for colnum in _WIDTH-1.._HEIGHT {
-        for rownum in 0..(_HEIGHT - _WIDTH) {
-            let mut result = true;
-            for offset in 0..cmp::min(_WIDTH, _HEIGHT) {
-                if state[rownum + offset][colnum - offset] != player {
-                    result = false;
-                    break;
-                }
-            }
-            if result {return true}
-        }
-    }
-    false
+    (state[0][0] == player && state[1][1] == player && state[2][2] == player) ||
+    (state[2][0] == player && state[1][1] == player && state[0][2] == player) 
 }
 
-fn get_end_state(state: State) -> TicTacToeState {
-    check_win_for(state, 'X');
-    TicTacToeState::Draw
+fn get_end_state(state: &State) -> TicTacToeState {
+    if check_win_for(&state.board, 'X')  {return TicTacToeState::Won('X');}
+    if check_win_for(&state.board, 'O')  {return TicTacToeState::Won('O');}
+    if state.path.len() == 9 {return TicTacToeState::Draw;}
+    TicTacToeState::Intermediate
 }
 
-fn is_end_state(state: State) -> bool{
+fn is_end_state(state: &State) -> bool{
     get_end_state(state) != TicTacToeState::Intermediate
 }
