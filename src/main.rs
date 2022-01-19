@@ -1,5 +1,5 @@
-use std::cmp;
 use std::convert::TryFrom;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 struct State {
@@ -13,10 +13,33 @@ fn main() {
         path: Vec::new(),
     };
 
+    let mut xwins = Vec::new();
+    let mut owins = Vec::new();
+    let mut draws = Vec::new();
     let first_turn = generate_next_turns(&initial_board, 'X');
+    let classified = classify(&first_turn);
 
-    println!("{:?}", first_turn);
+
+    xwins.push(&classified[&TicTacToeState::XWin]);
+    owins.push(&classified[&TicTacToeState::OWin]);
+    draws.push(&classified[&TicTacToeState::Draw]);
+    let second = &classified[&TicTacToeState::Intermediate].iter().flat_map(|state| generate_next_turns(state, 'O')).collect::<Vec<State>>();
+
 }
+
+
+fn classify(states: &[State]) -> HashMap<TicTacToeState, Vec<&State>> {
+    let mut result = HashMap::new();
+    result.insert(TicTacToeState::Intermediate, Vec::new());
+    result.insert(TicTacToeState::Draw, Vec::new());
+    result.insert(TicTacToeState::XWin, Vec::new());
+    result.insert(TicTacToeState::OWin, Vec::new());
+    for state in states {
+        result.get_mut(&get_end_state(state)).unwrap().push(state);
+    }
+    result
+}
+
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
     u8::try_from(col + (3 * row) + 1).unwrap()
@@ -38,11 +61,12 @@ fn generate_next_turns(state: &State, player: char) -> Vec<State> {
     res
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum TicTacToeState {
     Intermediate,
-    Won(char),
     Draw,
+    XWin,
+    OWin,
 }
 
 fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
@@ -65,10 +89,10 @@ fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
 
 fn get_end_state(state: &State) -> TicTacToeState {
     if check_win_for(&state.board, 'X') {
-        return TicTacToeState::Won('X');
+        return TicTacToeState::XWin;
     }
     if check_win_for(&state.board, 'O') {
-        return TicTacToeState::Won('O');
+        return TicTacToeState::OWin;
     }
     if state.path.len() == 9 {
         return TicTacToeState::Draw;
