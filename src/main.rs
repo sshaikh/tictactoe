@@ -13,29 +13,58 @@ fn main() {
         path: Vec::new(),
     };
 
-    let mut xwins = Vec::new();
-    let mut owins = Vec::new();
-    let mut draws = Vec::new();
-    let first_turn = generate_next_turns(&initial_board, 'X');
-    let classified = classify(&first_turn);
-
-
-    xwins.push(&classified[&TicTacToeState::XWin]);
-    owins.push(&classified[&TicTacToeState::OWin]);
-    draws.push(&classified[&TicTacToeState::Draw]);
-    let second = &classified[&TicTacToeState::Intermediate].iter().flat_map(|state| generate_next_turns(state, 'O')).collect::<Vec<State>>();
-
+    println!("turn\tint\tdraws\txwins\towins");
+    let states = play_games(vec![initial_board], 'X', 1);
+    println!("{}\t{}\t{}\t{}\t{}",
+        "total",
+        0,
+        states.get(&TicTacToeState::Draw).unwrap().len(),
+        states.get(&TicTacToeState::XWin).unwrap().len(),
+        states.get(&TicTacToeState::OWin).unwrap().len());
 }
 
+fn print_states(turn: u8, states: &HashMap<TicTacToeState,Vec<State>>) {
 
-fn classify(states: &[State]) -> HashMap<TicTacToeState, Vec<&State>> {
+    println!("{}\t{}\t{}\t{}\t{}",
+        turn,
+        states.get(&TicTacToeState::Intermediate).unwrap().len(),
+        states.get(&TicTacToeState::Draw).unwrap().len(),
+        states.get(&TicTacToeState::XWin).unwrap().len(),
+        states.get(&TicTacToeState::OWin).unwrap().len());
+}
+
+fn play_games(states: Vec<State>, player: char, turn: u8) -> HashMap<TicTacToeState, Vec<State>> {
+
+    let next_turns = states.into_iter().flat_map(|state| generate_next_turns(state, player)).collect::<Vec<State>>();
+    let mut classified = classify(next_turns);
+
+    //print status here
+    print_states(turn, &classified);
+    
+    let intermediate = classified.remove(&TicTacToeState::Intermediate).unwrap();
+    if !intermediate.is_empty() {
+        let mut result = play_games(intermediate, get_next_player(player), turn + 1);
+        classified.get_mut(&TicTacToeState::Draw).unwrap().append(result.get_mut(&TicTacToeState::Draw).unwrap());
+        classified.get_mut(&TicTacToeState::XWin).unwrap().append(result.get_mut(&TicTacToeState::XWin).unwrap());
+        classified.get_mut(&TicTacToeState::OWin).unwrap().append(result.get_mut(&TicTacToeState::OWin).unwrap());
+
+    }
+    classified
+}
+
+fn get_next_player(player: char) -> char {
+    if player == 'X' {return 'O';}
+    'X'
+}
+
+fn classify(states: Vec<State>) -> HashMap<TicTacToeState, Vec<State>> {
     let mut result = HashMap::new();
     result.insert(TicTacToeState::Intermediate, Vec::new());
     result.insert(TicTacToeState::Draw, Vec::new());
     result.insert(TicTacToeState::XWin, Vec::new());
     result.insert(TicTacToeState::OWin, Vec::new());
     for state in states {
-        result.get_mut(&get_end_state(state)).unwrap().push(state);
+        result.get_mut(&get_end_state(&state)).unwrap().push(state);
     }
     result
 }
@@ -45,7 +74,7 @@ fn get_ord_from_coords(row: usize, col: usize) -> u8 {
     u8::try_from(col + (3 * row) + 1).unwrap()
 }
 
-fn generate_next_turns(state: &State, player: char) -> Vec<State> {
+fn generate_next_turns(state: State, player: char) -> Vec<State> {
     let mut res = Vec::new();
     for (rownum, row) in state.board.iter().enumerate() {
         for (colnum, &c) in row.iter().enumerate() {
@@ -57,7 +86,6 @@ fn generate_next_turns(state: &State, player: char) -> Vec<State> {
             }
         }
     }
-
     res
 }
 
@@ -98,8 +126,4 @@ fn get_end_state(state: &State) -> TicTacToeState {
         return TicTacToeState::Draw;
     }
     TicTacToeState::Intermediate
-}
-
-fn is_end_state(state: &State) -> bool {
-    get_end_state(state) != TicTacToeState::Intermediate
 }
