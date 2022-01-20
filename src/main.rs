@@ -1,5 +1,5 @@
-use std::convert::TryFrom;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 struct State {
@@ -15,45 +15,58 @@ fn main() {
 
     println!("turn\tint\tdraws\txwins\towins");
     let states = play_games(vec![initial_board], 'X', 1);
-    println!("{}\t{}\t{}\t{}\t{}",
-        "total",
-        0,
+    println!(
+        "total\t\t{}\t{}\t{}",
         states.get(&TicTacToeState::Draw).unwrap().len(),
         states.get(&TicTacToeState::XWin).unwrap().len(),
-        states.get(&TicTacToeState::OWin).unwrap().len());
+        states.get(&TicTacToeState::OWin).unwrap().len()
+    );
 }
 
-fn print_states(turn: u8, states: &HashMap<TicTacToeState,Vec<State>>) {
-
-    println!("{}\t{}\t{}\t{}\t{}",
+fn print_states(turn: u8, states: &HashMap<TicTacToeState, Vec<State>>) {
+    println!(
+        "{}\t{}\t{}\t{}\t{}",
         turn,
         states.get(&TicTacToeState::Intermediate).unwrap().len(),
         states.get(&TicTacToeState::Draw).unwrap().len(),
         states.get(&TicTacToeState::XWin).unwrap().len(),
-        states.get(&TicTacToeState::OWin).unwrap().len());
+        states.get(&TicTacToeState::OWin).unwrap().len()
+    );
 }
 
 fn play_games(states: Vec<State>, player: char, turn: u8) -> HashMap<TicTacToeState, Vec<State>> {
-
-    let next_turns = states.into_iter().flat_map(|state| generate_next_turns(state, player)).collect::<Vec<State>>();
+    let next_turns = states
+        .into_iter()
+        .flat_map(|state| generate_next_turns(state, player))
+        .collect::<Vec<State>>();
     let mut classified = classify(next_turns);
 
     //print status here
     print_states(turn, &classified);
-    
+
     let intermediate = classified.remove(&TicTacToeState::Intermediate).unwrap();
     if !intermediate.is_empty() {
         let mut result = play_games(intermediate, get_next_player(player), turn + 1);
-        classified.get_mut(&TicTacToeState::Draw).unwrap().append(result.get_mut(&TicTacToeState::Draw).unwrap());
-        classified.get_mut(&TicTacToeState::XWin).unwrap().append(result.get_mut(&TicTacToeState::XWin).unwrap());
-        classified.get_mut(&TicTacToeState::OWin).unwrap().append(result.get_mut(&TicTacToeState::OWin).unwrap());
-
+        classified
+            .get_mut(&TicTacToeState::Draw)
+            .unwrap()
+            .append(result.get_mut(&TicTacToeState::Draw).unwrap());
+        classified
+            .get_mut(&TicTacToeState::XWin)
+            .unwrap()
+            .append(result.get_mut(&TicTacToeState::XWin).unwrap());
+        classified
+            .get_mut(&TicTacToeState::OWin)
+            .unwrap()
+            .append(result.get_mut(&TicTacToeState::OWin).unwrap());
     }
     classified
 }
 
 fn get_next_player(player: char) -> char {
-    if player == 'X' {return 'O';}
+    if player == 'X' {
+        return 'O';
+    }
     'X'
 }
 
@@ -68,7 +81,6 @@ fn classify(states: Vec<State>) -> HashMap<TicTacToeState, Vec<State>> {
     }
     result
 }
-
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
     u8::try_from(col + (3 * row) + 1).unwrap()
