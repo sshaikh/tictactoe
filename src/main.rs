@@ -164,7 +164,7 @@ fn get_hash(board: &Board) -> u32 {
     result
 }
 
-fn rotate_board(mut board: Board) -> Board {
+fn rotate_board(board: &mut Board) {
     //clone first row
     let first_row: Vec<char> = board[0].clone();
     //rotate anti clockwise
@@ -178,15 +178,13 @@ fn rotate_board(mut board: Board) -> Board {
     board[2][1] = board[1][0];
     board[2][0] = first_row[0];
     board[1][0] = first_row[1];
-    
-    board
 }
 
 fn get_smallest_hash(board: &Board) -> u32 {
     let mut hashes = vec![get_hash(board)];
     let mut clone: Board = board.to_vec();
-    for i in 0..3 {
-        clone = rotate_board(clone);
+    for _i in 0..3 {
+        rotate_board(&mut clone);
         hashes.push(get_hash(&clone));
     }
     *hashes.iter().min().unwrap()
@@ -211,9 +209,9 @@ mod tests {
 
     #[test]
     fn test_rotate() {
-        let state = test_state();
-        let rotated = rotate_board(state.board);
-        let hash = get_hash(&rotated);
+        let mut state = test_state();
+        rotate_board(&mut state.board);
+        let hash = get_hash(&state.board);
 
         assert_eq!(hash, 221112211);
     }
