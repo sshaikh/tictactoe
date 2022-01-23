@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+
+type Board = Vec<Vec<char>>;
+
 #[derive(Debug, Clone)]
 struct State {
-    board: Vec<Vec<char>>,
+    board: Board,
     path: Vec<u8>,
 }
 
@@ -29,6 +32,8 @@ fn main() {
         states.get(&TicTacToeState::XWin).unwrap().len(),
         states.get(&TicTacToeState::OWin).unwrap().len()
     );
+
+    println!("{:?}", states.get(&TicTacToeState::Draw).unwrap().get(1000).unwrap());
 }
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
@@ -50,7 +55,7 @@ fn generate_next_turns(state: State, player: char) -> Vec<State> {
     res
 }
 
-fn check_win_for(state: &Vec<Vec<char>>, player: char) -> bool {
+fn check_win_for(state: &Board, player: char) -> bool {
     // check rows
     for row in state {
         if row.iter().all(|&c| c == player) {
@@ -138,4 +143,87 @@ fn play_games(states: Vec<State>, player: char, turn: u8) -> HashMap<TicTacToeSt
             .append(result.get_mut(&TicTacToeState::OWin).unwrap());
     }
     classified
+}
+
+fn get_ord(c: char) -> u32 {
+    match c {
+        'X' => 1,
+        'O' => 2,
+        ' ' => 3,
+        unknown => panic!("No ord for {}", unknown),
+    }
+}
+
+fn get_hash(board: &Board) -> u32 {
+    let mut result: u32 = 0;
+    for row in board {
+        for col in row {
+            result = 10 * result + get_ord(*col);
+        }
+    }
+    result
+}
+
+fn rotate_board(mut board: Board) -> Board {
+    //clone first row
+    let first_row: Vec<char> = board[0].clone();
+    //rotate anti clockwise
+    board[0][0] = board[0][2];
+    board[0][1] = board[1][2];
+    board[0][2] = board[2][2];
+
+    board[1][2] = board[2][1];
+    board[2][2] = board[2][0];
+
+    board[2][1] = board[1][0];
+    board[2][0] = first_row[0];
+    board[1][0] = first_row[1];
+    
+    board
+}
+
+fn get_smallest_hash(board: &Board) -> u32 {
+    let mut hashes = vec![get_hash(board)];
+    let mut clone: Board = board.to_vec();
+    for i in 0..3 {
+        clone = rotate_board(clone);
+        hashes.push(get_hash(&clone));
+    }
+    *hashes.iter().min().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{State, get_hash, rotate_board, get_smallest_hash};
+    fn test_state() -> State {
+        let board = vec![vec!['O', 'X', 'O'], vec!['X', 'X', 'O'], vec!['X', 'O', 'X']];
+        let path = vec![ 1, 3, 5, 4, 7, 9, 2, 8, 6];
+        State { board, path }
+    }
+
+    #[test]
+    fn test_hash() {
+        let state = test_state();
+        let hash = get_hash(&state.board);
+
+        assert_eq!(hash, 212112121);
+    }
+
+    #[test]
+    fn test_rotate() {
+        let state = test_state();
+        let rotated = rotate_board(state.board);
+        let hash = get_hash(&rotated);
+
+        assert_eq!(hash, 221112211);
+    }
+
+    #[test]
+    fn test_get_smallest_hash() {
+        let state = test_state();
+        let hash = get_smallest_hash(&state.board);
+
+        assert_eq!(hash, 112211122);
+    }
+        
 }
