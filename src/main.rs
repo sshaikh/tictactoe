@@ -194,7 +194,7 @@ fn get_smallest_hash(board: &Board) -> u32 {
 mod tests {
     use crate::{State, get_hash, rotate_board, get_smallest_hash};
     fn test_state() -> State {
-        let board = vec![vec!['O', 'X', 'O'], vec!['X', 'X', 'O'], vec!['X', 'O', 'X']];
+        let board = vec![vec!['X', 'X', 'O'], vec!['O', 'X', 'X'], vec!['X', 'O', 'O']];
         let path = vec![ 1, 3, 5, 4, 7, 9, 2, 8, 6];
         State { board, path }
     }
@@ -204,7 +204,7 @@ mod tests {
         let state = test_state();
         let hash = get_hash(&state.board);
 
-        assert_eq!(hash, 212112121);
+        assert_eq!(hash, 112211122);
     }
 
     #[test]
@@ -213,15 +213,20 @@ mod tests {
         rotate_board(&mut state.board);
         let hash = get_hash(&state.board);
 
-        assert_eq!(hash, 221112211);
+        assert_eq!(hash, 212112121);
     }
 
     #[test]
     fn test_get_smallest_hash() {
-        let state = test_state();
+        let mut state = test_state();
+        rotate_board(&mut state.board);
         let hash = get_smallest_hash(&state.board);
 
         assert_eq!(hash, 112211122);
+    }
+
+    #[test]
+    fn test_is_smallest_hash() {
     }
         
 }
