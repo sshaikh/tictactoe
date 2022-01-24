@@ -180,14 +180,15 @@ fn rotate_board(board: &mut Board) {
     board[1][0] = first_row[1];
 }
 
-fn get_smallest_hash(board: &Board) -> u32 {
+fn get_smallest_hash(board: &Board) -> (u32, bool) {
     let mut hashes = vec![get_hash(board)];
     let mut clone: Board = board.to_vec();
     for _i in 0..3 {
         rotate_board(&mut clone);
         hashes.push(get_hash(&clone));
     }
-    *hashes.iter().min().unwrap()
+    let min_hash = *hashes.iter().min().unwrap();
+    (min_hash, min_hash == hashes[0])
 }
 
 #[cfg(test)]
@@ -219,14 +220,15 @@ mod tests {
     #[test]
     fn test_get_smallest_hash() {
         let mut state = test_state();
+        let (hash, is_smallest) = get_smallest_hash(&state.board);
+        assert_eq!(hash, 112211122);
+        assert!(is_smallest);
+
         rotate_board(&mut state.board);
-        let hash = get_smallest_hash(&state.board);
+        let (hash, is_smallest) = get_smallest_hash(&state.board);
 
         assert_eq!(hash, 112211122);
+        assert!(!is_smallest);
     }
 
-    #[test]
-    fn test_is_smallest_hash() {
-    }
-        
 }
