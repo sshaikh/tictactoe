@@ -33,7 +33,16 @@ fn main() {
         states.get(&TicTacToeState::OWin).unwrap().len()
     );
 
-    println!("{:?}", states.get(&TicTacToeState::Draw).unwrap().get(1000).unwrap());
+//    println!("{:?}", states.get(&TicTacToeState::Draw).unwrap().get(1000).unwrap());
+
+    let reduced: HashMap<_, _> = states.into_iter().map(|(k, v)| (k, reduce_states(v))).collect();
+    println!(
+        "reduced\t\t{}\t{}\t{}",
+        reduced.get(&TicTacToeState::Draw).unwrap().len(),
+        reduced.get(&TicTacToeState::XWin).unwrap().len(),
+        reduced.get(&TicTacToeState::OWin).unwrap().len()
+    );
+    
 }
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
@@ -191,9 +200,31 @@ fn get_smallest_hash(board: &Board) -> (u32, bool) {
     (min_hash, min_hash == hashes[0])
 }
 
+fn reduce_states(states: Vec<State>) -> Vec<Vec<Vec<u8>>> {
+    let mut working = HashMap::new();
+
+    for state in states {
+        let (hash, _) = get_smallest_hash(&state.board);
+        let paths = working.entry(hash).or_insert(Vec::new());
+        paths.push(state.path);
+    }
+
+    let mut result = Vec::new(); 
+    let mut its = working.keys().cloned().collect::<Vec<_>>();
+    its.sort();
+
+    for k in its {
+        let mut paths = working.remove(&k).unwrap();
+        paths.sort();
+        result.push(paths);
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{State, get_hash, rotate_board, get_smallest_hash};
+    use crate::{State, get_hash, rotate_board, get_smallest_hash, reduce_states};
     fn test_state() -> State {
         let board = vec![vec!['X', 'X', 'O'], vec!['O', 'X', 'X'], vec!['X', 'O', 'O']];
         let path = vec![ 1, 3, 5, 4, 7, 9, 2, 8, 6];
@@ -231,4 +262,16 @@ mod tests {
         assert!(!is_smallest);
     }
 
+    #[test]
+    fn test_reduction() {
+        let state = test_state();
+        let mut state2 = test_state();
+        rotate_board(&mut state2.board);
+        let states = vec![state2, state];
+
+        let reduced = reduce_states(states);
+
+        let paths = &reduced[0];
+        assert_eq!(paths.len(), 2);
+    }
 }
