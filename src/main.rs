@@ -189,13 +189,53 @@ fn rotate_board(board: &mut Board) {
     board[1][0] = first_row[1];
 }
 
+fn reflect_board(board: &Board,
+    x1: usize, y1: usize, x1n: usize, y1n: usize,
+    x2: usize, y2: usize, x2n: usize, y2n: usize,
+    x3: usize, y3: usize, x3n: usize, y3n: usize
+    ) -> Board {
+    let mut reflect = board.to_owned();
+    reflect[x1][y1] = board[x1n][y1n];
+    reflect[x2][y2] = board[x2n][y2n];
+    reflect[x3][y3] = board[x3n][y3n];
+
+    reflect[x1n][y1n] = board[x1][y1];
+    reflect[x2n][y2n] = board[x2][y2];
+    reflect[x3n][y3n] = board[x3][y3];
+
+    reflect
+}
+
+fn reflect_board_x(board: &Board) -> Board {
+    reflect_board(board, 0, 0, 2, 0, 0, 1, 2, 1, 0, 2, 2, 2)
+}
+
+fn reflect_board_y(board: &Board) -> Board {
+    reflect_board(board, 0, 0, 0, 2, 1, 0, 1, 2, 2, 0, 2, 2)
+}
+
+fn reflect_board_forward_diag(board: &Board) -> Board {
+    reflect_board(board, 0, 0, 2, 2, 0, 1, 1, 2, 1, 0, 2, 1)
+}
+
+fn reflect_board_backward_diag(board: &Board) -> Board {
+    reflect_board(board, 0, 2, 2, 0, 0, 1, 1, 0, 1, 2, 2, 1)
+}
+
 fn get_smallest_hash(board: &Board) -> (u32, bool) {
     let mut hashes = vec![get_hash(board)];
     let mut clone: Board = board.to_vec();
+    // get rotations
     for _i in 0..3 {
         rotate_board(&mut clone);
         hashes.push(get_hash(&clone));
     }
+    // get reflections
+    hashes.push(get_hash(&reflect_board_x(board)));
+    hashes.push(get_hash(&reflect_board_y(board)));
+    hashes.push(get_hash(&reflect_board_forward_diag(board)));
+    hashes.push(get_hash(&reflect_board_backward_diag(board)));
+
     let min_hash = *hashes.iter().min().unwrap();
     (min_hash, min_hash == hashes[0])
 }
