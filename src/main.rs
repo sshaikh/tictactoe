@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-
 type Board = Vec<Vec<char>>;
 
 #[derive(Debug, Clone)]
@@ -33,16 +32,28 @@ fn main() {
         states.get(&TicTacToeState::OWin).unwrap().len()
     );
 
-//    println!("{:?}", states.get(&TicTacToeState::Draw).unwrap().get(1000).unwrap());
+    //    println!("{:?}", states.get(&TicTacToeState::Draw).unwrap().get(1000).unwrap());
 
-    let reduced: HashMap<_, _> = states.into_iter().map(|(k, v)| (k, reduce_states(v))).collect();
+    let reduced: HashMap<_, _> = states
+        .into_iter()
+        .map(|(k, v)| (k, reduce_states(v)))
+        .collect();
     println!(
         "reduced\t\t{}\t{}\t{}",
         reduced.get(&TicTacToeState::Draw).unwrap().len(),
         reduced.get(&TicTacToeState::XWin).unwrap().len(),
         reduced.get(&TicTacToeState::OWin).unwrap().len()
     );
-    
+
+    println!(
+        "draws: {:?}",
+        reduced
+            .get(&TicTacToeState::Draw)
+            .unwrap()
+            .iter()
+            .map(|x| x[0].to_owned())
+            .collect::<Vec<Vec<u8>>>()
+    );
 }
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
@@ -189,11 +200,21 @@ fn rotate_board(board: &mut Board) {
     board[1][0] = first_row[1];
 }
 
-fn reflect_board(board: &Board,
-    x1: usize, y1: usize, x1n: usize, y1n: usize,
-    x2: usize, y2: usize, x2n: usize, y2n: usize,
-    x3: usize, y3: usize, x3n: usize, y3n: usize
-    ) -> Board {
+fn reflect_board(
+    board: &Board,
+    x1: usize,
+    y1: usize,
+    x1n: usize,
+    y1n: usize,
+    x2: usize,
+    y2: usize,
+    x2n: usize,
+    y2n: usize,
+    x3: usize,
+    y3: usize,
+    x3n: usize,
+    y3n: usize,
+) -> Board {
     let mut reflect = board.to_owned();
     reflect[x1][y1] = board[x1n][y1n];
     reflect[x2][y2] = board[x2n][y2n];
@@ -249,7 +270,7 @@ fn reduce_states(states: Vec<State>) -> Vec<Vec<Vec<u8>>> {
         paths.push(state.path);
     }
 
-    let mut result = Vec::new(); 
+    let mut result = Vec::new();
     let mut its = working.keys().cloned().collect::<Vec<_>>();
     its.sort();
 
@@ -264,10 +285,14 @@ fn reduce_states(states: Vec<State>) -> Vec<Vec<Vec<u8>>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{State, get_hash, rotate_board, get_smallest_hash, reduce_states};
+    use crate::{get_hash, get_smallest_hash, reduce_states, rotate_board, State};
     fn test_state() -> State {
-        let board = vec![vec!['X', 'X', 'O'], vec!['O', 'X', 'X'], vec!['X', 'O', 'O']];
-        let path = vec![ 1, 3, 5, 4, 7, 9, 2, 8, 6];
+        let board = vec![
+            vec!['X', 'X', 'O'],
+            vec!['O', 'X', 'X'],
+            vec!['X', 'O', 'O'],
+        ];
+        let path = vec![1, 3, 5, 4, 7, 9, 2, 8, 6];
         State { board, path }
     }
 
