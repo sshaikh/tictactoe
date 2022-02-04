@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fmt::{self, Debug};
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 type Board = Vec<Vec<char>>;
 
@@ -15,6 +18,12 @@ enum TicTacToeState {
     Draw,
     XWin,
     OWin,
+}
+
+impl fmt::Display for TicTacToeState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 fn main() {
@@ -45,15 +54,12 @@ fn main() {
         reduced.get(&TicTacToeState::OWin).unwrap().len()
     );
 
-    println!(
-        "draws: {:?}",
-        reduced
-            .get(&TicTacToeState::Draw)
-            .unwrap()
-            .iter()
-            .map(|x| x[0].to_owned())
-            .collect::<Vec<Vec<u8>>>()
-    );
+    for (key, value) in reduced.iter() {
+        let file = File::create("result_".to_owned() + &key.to_string()).unwrap();
+        let mut writer = BufWriter::new(file);
+        serde_json::to_writer(&mut writer, &value).unwrap();
+        writer.flush().unwrap();
+    }
 }
 
 fn get_ord_from_coords(row: usize, col: usize) -> u8 {
