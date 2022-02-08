@@ -4,12 +4,24 @@ use std::fmt::{self, Debug};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
+use serde::Serialize;
+
 type Board = Vec<Vec<char>>;
 
 #[derive(Debug, Clone)]
 struct State {
     board: Board,
     path: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct GameData {
+    synonyms: Vec<u32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct GameTypeData {
+    games: HashMap<u32, GameData>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -24,6 +36,13 @@ impl fmt::Display for TicTacToeState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
+}
+
+fn collapse_game(game: &[u8]) -> u32 {
+    let len: u32 = game.len() as u32 - 1;
+    game.iter().enumerate().fold(0, |acc, (pos, &e)| {
+        acc + (e as u32 * 10u32.pow(len - pos as u32))
+    })
 }
 
 fn main() {
@@ -55,9 +74,26 @@ fn main() {
     );
 
     for (key, value) in reduced.iter() {
+        let mut transformed: HashMap<u32, GameData> = HashMap::new();
+        for games in value {
+            println!(
+                "doing games for {} of length {}",
+                &key.to_string(),
+                games.len()
+            );
+            let first_game = collapse_game(&games[0]);
+            let collapsed_games = games.iter().map(|game| collapse_game(game)).collect();
+            let game_data = GameData {
+                synonyms: collapsed_games,
+            };
+            transformed.insert(first_game, game_data);
+        }
+
+        let game_type_data = GameTypeData { games: transformed };
+
         let file = File::create("result_".to_owned() + &key.to_string()).unwrap();
         let mut writer = BufWriter::new(file);
-        serde_json::to_writer(&mut writer, &value).unwrap();
+        serde_json::to_writer(&mut writer, &game_type_data).unwrap();
         writer.flush().unwrap();
     }
 }
@@ -291,7 +327,7 @@ fn reduce_states(states: Vec<State>) -> Vec<Vec<Vec<u8>>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{get_hash, get_smallest_hash, reduce_states, rotate_board, State};
+    use crate::{collapse_game, get_hash, get_smallest_hash, reduce_states, rotate_board, State};
     fn test_state() -> State {
         let board = vec![
             vec!['X', 'X', 'O'],
@@ -344,5 +380,13 @@ mod tests {
 
         let paths = &reduced[0];
         assert_eq!(paths.len(), 2);
+    }
+
+    #[test]
+    fn test_collapse_game() {
+        let input = vec![1, 2, 3, 4];
+        let result = collapse_game(&input);
+
+        assert_eq!(result, 1234);
     }
 }
