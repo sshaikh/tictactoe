@@ -310,13 +310,13 @@ fn reduce_states(states: Vec<State>) -> Vec<Vec<Vec<u8>>> {
 
     for state in states {
         let (hash, _) = get_smallest_hash(&state.board);
-        let paths = working.entry(hash).or_insert(Vec::new());
+        let paths = working.entry(hash).or_insert_with(Vec::new);
         paths.push(state.path);
     }
 
     let mut result = Vec::new();
     let mut its = working.keys().cloned().collect::<Vec<_>>();
-    its.sort();
+    its.sort_unstable();
 
     for k in its {
         let mut paths = working.remove(&k).unwrap();
