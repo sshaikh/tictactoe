@@ -16,6 +16,7 @@ struct State {
 
 #[derive(Debug, Clone, Serialize)]
 struct GameData {
+    game: u32,
     synonyms: Vec<u32>,
 }
 
@@ -84,6 +85,7 @@ fn main() {
             let first_game = collapse_game(&games[0]);
             let collapsed_games = games.iter().map(|game| collapse_game(game)).collect();
             let game_data = GameData {
+                game: first_game,
                 synonyms: collapsed_games,
             };
             transformed.insert(first_game, game_data);
